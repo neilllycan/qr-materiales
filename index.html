@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lector QR de Materiales</title>
+<title>Lector QR</title>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <style>
 body{
@@ -19,23 +19,25 @@ body{
 }
 .contenedor{
     margin:40px 0;
-    width:500px;
+    width:520px;
     background:rgba(255,255,255,0.90);
     border-radius:15px;
     padding:30px;
     box-shadow:0 4px 15px rgba(0,0,0,0.25);
 }
 h1{text-align:center;margin-top:0;}
-#reader{width:100%;margin:20px 0;}
+video, canvas{width:100%;border:2px solid #0000FF;border-radius:10px;}
+canvas{display:none;}
+.estado{text-align:center;font-weight:bold;color:#0000AA;margin:15px 0;}
 .fila{display:flex;align-items:center;margin-bottom:12px;}
 .fila label{width:160px;font-size:18px;font-weight:bold;text-align:right;margin-right:10px;}
 .fila input{flex:1;padding:8px;font-size:16px;font-family:"Arial Narrow",Arial,sans-serif;border:1px solid #999;border-radius:4px;background:#f3f3f3;}
-.boton{display:flex;justify-content:center;margin-top:15px;gap:10px;flex-wrap:wrap;}
+.boton{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0;}
 button{
     width:220px;height:50px;font-size:18px;font-family:"Arial Narrow",Arial,sans-serif;
-    cursor:pointer;background:#fff;border:2px solid #0000FF;border-radius:8px;
+    cursor:pointer;background:white;border:2px solid #0000FF;border-radius:8px;
 }
-.estado{text-align:center;font-weight:bold;color:#0000AA;margin-bottom:10px;}
+input[type=file]{margin:15px 0;width:100%;}
 </style>
 </head>
 
@@ -48,77 +50,117 @@ button{
 
 <div class="boton">
     <button onclick="iniciarCamara()">Iniciar Cámara</button>
-    <button onclick="location.reload()">Escanear Otro QR</button>
+    <button onclick="location.reload()">Reiniciar</button>
 </div>
 
-<div id="reader"></div>
+<video id="video" playsinline></video>
+<canvas id="canvas"></canvas>
 
-<div class="fila"><label>Código de Registro:</label><input type="text" id="codigoRegistro" readonly></div>
-<div class="fila"><label>Fecha Producción:</label><input type="text" id="fechaProduccion" readonly></div>
-<div class="fila"><label>Cantidad de Piezas:</label><input type="text" id="cantidadPiezas" readonly></div>
-<div class="fila"><label>Material:</label><input type="text" id="material" readonly></div>
-<div class="fila"><label>Dimensiones:</label><input type="text" id="dimensiones" readonly></div>
-<div class="fila"><label>Espesor:</label><input type="text" id="espesor" readonly></div>
-<div class="fila"><label>Color:</label><input type="text" id="color" readonly></div>
-<div class="fila"><label>Cliente:</label><input type="text" id="cliente" readonly></div>
-<div class="fila"><label>Textura:</label><input type="text" id="textura" readonly></div>
+<input type="file" accept="image/*" onchange="leerImagenQR(event)">
+
+<div class="fila"><label>Código de Registro:</label><input id="codigoRegistro" readonly></div>
+<div class="fila"><label>Fecha Producción:</label><input id="fechaProduccion" readonly></div>
+<div class="fila"><label>Cantidad de Piezas:</label><input id="cantidadPiezas" readonly></div>
+<div class="fila"><label>Material:</label><input id="material" readonly></div>
+<div class="fila"><label>Dimensiones:</label><input id="dimensiones" readonly></div>
+<div class="fila"><label>Espesor:</label><input id="espesor" readonly></div>
+<div class="fila"><label>Color:</label><input id="color" readonly></div>
+<div class="fila"><label>Cliente:</label><input id="cliente" readonly></div>
+<div class="fila"><label>Textura:</label><input id="textura" readonly></div>
 
 </div>
 
 <script>
-let html5QrCode;
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 let escaneando = false;
 
-function llenarCampos(datos){
-    codigoRegistro.value = datos.codigoRegistro || "";
-    fechaProduccion.value = datos.fechaProduccion || "";
-    cantidadPiezas.value = datos.cantidadPiezas || "";
-    material.value = datos.material || "";
-    dimensiones.value = datos.dimensiones || "";
-    espesor.value = datos.espesor || "";
-    color.value = datos.color || "";
-    cliente.value = datos.cliente || "";
-    textura.value = datos.textura || "";
+function llenarCampos(textoQR){
+    try{
+        const datos = JSON.parse(textoQR);
+
+        codigoRegistro.value = datos.codigoRegistro || "";
+        fechaProduccion.value = datos.fechaProduccion || "";
+        cantidadPiezas.value = datos.cantidadPiezas || "";
+        material.value = datos.material || "";
+        dimensiones.value = datos.dimensiones || "";
+        espesor.value = datos.espesor || "";
+        color.value = datos.color || "";
+        cliente.value = datos.cliente || "";
+        textura.value = datos.textura || "";
+
+        estado.innerText = "QR leído correctamente";
+        escaneando = false;
+    }catch(e){
+        estado.innerText = "El QR fue leído, pero no tiene el formato esperado";
+    }
 }
 
 async function iniciarCamara(){
-
-    if(escaneando) return;
-
-    estado.innerText = "Solicitando permiso de cámara...";
-
-    html5QrCode = new Html5Qrcode("reader");
+    estado.innerText = "Solicitando cámara...";
 
     try{
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 }
-            },
-            async function(decodedText){
-                try{
-                    const datos = JSON.parse(decodedText);
-                    llenarCampos(datos);
-                    estado.innerText = "QR leído correctamente";
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false
+        });
 
-                    escaneando = false;
-                    await html5QrCode.stop();
-                }
-                catch(e){
-                    estado.innerText = "El QR no tiene el formato esperado";
-                }
-            },
-            function(errorMessage){}
-        );
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true);
+        await video.play();
 
         escaneando = true;
         estado.innerText = "Apunta la cámara al QR";
+        requestAnimationFrame(escanear);
+    }catch(error){
+        estado.innerText = "No se pudo abrir la cámara. Revisa permisos y HTTPS.";
     }
-    catch(error){
-        estado.innerText = "No se pudo acceder a la cámara. Revisa permisos del navegador.";
-        console.error(error);
+}
+
+function escanear(){
+    if(!escaneando) return;
+
+    if(video.readyState === video.HAVE_ENOUGH_DATA){
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const codigo = jsQR(imagen.data, imagen.width, imagen.height, {
+            inversionAttempts: "dontInvert"
+        });
+
+        if(codigo){
+            llenarCampos(codigo.data);
+            return;
+        }
     }
+
+    requestAnimationFrame(escanear);
+}
+
+function leerImagenQR(event){
+    const archivo = event.target.files[0];
+    if(!archivo) return;
+
+    const img = new Image();
+    img.onload = function(){
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const codigo = jsQR(imagen.data, imagen.width, imagen.height);
+
+        if(codigo){
+            llenarCampos(codigo.data);
+        }else{
+            estado.innerText = "No se detectó QR en la imagen";
+        }
+    };
+
+    img.src = URL.createObjectURL(archivo);
 }
 </script>
 
