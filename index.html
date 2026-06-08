@@ -5,244 +5,121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lector QR de Materiales</title>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
-
 body{
     margin:0;
     min-height:100vh;
     font-family:"Arial Narrow", Arial, sans-serif;
-
-    background:linear-gradient(
-        to bottom,
-        #B3B3FF 0%,
-        #0000FF 50%,
-        #00004D 100%
-    );
-
+    background:linear-gradient(to bottom,#B3B3FF 0%,#0000FF 50%,#00004D 100%);
     display:flex;
     justify-content:center;
     align-items:flex-start;
 }
-
 .contenedor{
-    margin-top:40px;
-    margin-bottom:40px;
+    margin:40px 0;
     width:500px;
-
     background:rgba(255,255,255,0.90);
-
     border-radius:15px;
     padding:30px;
-
-    box-shadow:0px 4px 15px rgba(0,0,0,0.25);
+    box-shadow:0 4px 15px rgba(0,0,0,0.25);
 }
-
-h1{
-    text-align:center;
-    margin-top:0;
-    margin-bottom:25px;
-}
-
-#reader{
-    width:100%;
-    margin-bottom:25px;
-}
-
-.fila{
-    display:flex;
-    align-items:center;
-    margin-bottom:12px;
-}
-
-.fila label{
-    width:160px;
-    font-size:18px;
-    font-weight:bold;
-    text-align:right;
-    margin-right:10px;
-}
-
-.fila input{
-    flex:1;
-    padding:8px;
-    font-size:16px;
-    font-family:"Arial Narrow", Arial, sans-serif;
-    border:1px solid #999;
-    border-radius:4px;
-    background:#f3f3f3;
-}
-
-.boton{
-    display:flex;
-    justify-content:center;
-    margin-top:25px;
-}
-
+h1{text-align:center;margin-top:0;}
+#reader{width:100%;margin:20px 0;}
+.fila{display:flex;align-items:center;margin-bottom:12px;}
+.fila label{width:160px;font-size:18px;font-weight:bold;text-align:right;margin-right:10px;}
+.fila input{flex:1;padding:8px;font-size:16px;font-family:"Arial Narrow",Arial,sans-serif;border:1px solid #999;border-radius:4px;background:#f3f3f3;}
+.boton{display:flex;justify-content:center;margin-top:15px;gap:10px;flex-wrap:wrap;}
 button{
-    width:220px;
-    height:55px;
-    font-size:20px;
-    font-family:"Arial Narrow", Arial, sans-serif;
-    cursor:pointer;
-
-    background:#FFFFFF;
-    border:2px solid #0000FF;
-    border-radius:8px;
+    width:220px;height:50px;font-size:18px;font-family:"Arial Narrow",Arial,sans-serif;
+    cursor:pointer;background:#fff;border:2px solid #0000FF;border-radius:8px;
 }
-
-button:hover{
-    background:#E6E6FF;
-}
-
-.estado{
-    text-align:center;
-    font-weight:bold;
-    margin-bottom:15px;
-    color:#0000AA;
-}
-
+.estado{text-align:center;font-weight:bold;color:#0000AA;margin-bottom:10px;}
 </style>
 </head>
 
 <body>
-
 <div class="contenedor">
 
-    <h1>Lector QR de Materiales</h1>
+<h1>Lector QR de Materiales</h1>
 
-    <div class="estado" id="estado">
-        Inicializando cámara...
-    </div>
+<div class="estado" id="estado">Presiona iniciar cámara</div>
 
-    <div id="reader"></div>
+<div class="boton">
+    <button onclick="iniciarCamara()">Iniciar Cámara</button>
+    <button onclick="location.reload()">Escanear Otro QR</button>
+</div>
 
-    <div class="fila">
-        <label>Código de Registro:</label>
-        <input type="text" id="codigoRegistro" readonly>
-    </div>
+<div id="reader"></div>
 
-    <div class="fila">
-        <label>Fecha Producción:</label>
-        <input type="text" id="fechaProduccion" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Cantidad de Piezas:</label>
-        <input type="text" id="cantidadPiezas" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Material:</label>
-        <input type="text" id="material" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Dimensiones:</label>
-        <input type="text" id="dimensiones" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Espesor:</label>
-        <input type="text" id="espesor" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Color:</label>
-        <input type="text" id="color" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Cliente:</label>
-        <input type="text" id="cliente" readonly>
-    </div>
-
-    <div class="fila">
-        <label>Textura:</label>
-        <input type="text" id="textura" readonly>
-    </div>
-
-    <div class="boton">
-        <button onclick="reiniciarEscaneo()">
-            Escanear Otro QR
-        </button>
-    </div>
+<div class="fila"><label>Código de Registro:</label><input type="text" id="codigoRegistro" readonly></div>
+<div class="fila"><label>Fecha Producción:</label><input type="text" id="fechaProduccion" readonly></div>
+<div class="fila"><label>Cantidad de Piezas:</label><input type="text" id="cantidadPiezas" readonly></div>
+<div class="fila"><label>Material:</label><input type="text" id="material" readonly></div>
+<div class="fila"><label>Dimensiones:</label><input type="text" id="dimensiones" readonly></div>
+<div class="fila"><label>Espesor:</label><input type="text" id="espesor" readonly></div>
+<div class="fila"><label>Color:</label><input type="text" id="color" readonly></div>
+<div class="fila"><label>Cliente:</label><input type="text" id="cliente" readonly></div>
+<div class="fila"><label>Textura:</label><input type="text" id="textura" readonly></div>
 
 </div>
 
 <script>
-
 let html5QrCode;
+let escaneando = false;
 
 function llenarCampos(datos){
-
-    document.getElementById("codigoRegistro").value = datos.codigoRegistro || "";
-    document.getElementById("fechaProduccion").value = datos.fechaProduccion || "";
-    document.getElementById("cantidadPiezas").value = datos.cantidadPiezas || "";
-
-    document.getElementById("material").value = datos.material || "";
-    document.getElementById("dimensiones").value = datos.dimensiones || "";
-    document.getElementById("espesor").value = datos.espesor || "";
-    document.getElementById("color").value = datos.color || "";
-    document.getElementById("cliente").value = datos.cliente || "";
-    document.getElementById("textura").value = datos.textura || "";
+    codigoRegistro.value = datos.codigoRegistro || "";
+    fechaProduccion.value = datos.fechaProduccion || "";
+    cantidadPiezas.value = datos.cantidadPiezas || "";
+    material.value = datos.material || "";
+    dimensiones.value = datos.dimensiones || "";
+    espesor.value = datos.espesor || "";
+    color.value = datos.color || "";
+    cliente.value = datos.cliente || "";
+    textura.value = datos.textura || "";
 }
 
 async function iniciarCamara(){
 
-    document.getElementById("estado").innerText =
-        "Apunte la cámara al código QR";
+    if(escaneando) return;
+
+    estado.innerText = "Solicitando permiso de cámara...";
 
     html5QrCode = new Html5Qrcode("reader");
 
     try{
-
         await html5QrCode.start(
+            { facingMode: "environment" },
             {
-                facingMode:"environment"
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
             },
-            {
-                fps:10,
-                qrbox:250
-            },
-            function(decodedText){
-
+            async function(decodedText){
                 try{
-
                     const datos = JSON.parse(decodedText);
-
                     llenarCampos(datos);
+                    estado.innerText = "QR leído correctamente";
 
-                    document.getElementById("estado").innerText =
-                        "QR leído correctamente";
-
-                    html5QrCode.stop();
-
+                    escaneando = false;
+                    await html5QrCode.stop();
                 }
-                catch(error){
-
-                    document.getElementById("estado").innerText =
-                        "El QR no corresponde al formato esperado";
+                catch(e){
+                    estado.innerText = "El QR no tiene el formato esperado";
                 }
-            }
+            },
+            function(errorMessage){}
         );
 
+        escaneando = true;
+        estado.innerText = "Apunta la cámara al QR";
     }
     catch(error){
-
-        document.getElementById("estado").innerText =
-            "No se pudo acceder a la cámara";
+        estado.innerText = "No se pudo acceder a la cámara. Revisa permisos del navegador.";
+        console.error(error);
     }
 }
-
-function reiniciarEscaneo(){
-
-    location.reload();
-}
-
-window.onload = iniciarCamara;
-
 </script>
 
 </body>
